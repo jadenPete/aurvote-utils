@@ -7,7 +7,7 @@ def get_pkgs(args):
     return set([line.decode().strip() for line in subprocess.Popen(args, stdout=subprocess.PIPE).stdout])
 
 def main():
-    parser = argparse.ArgumentParser(usage="%progs [-h | -r <repo>]")
+    parser = argparse.ArgumentParser(usage="%(prog)s [-h | -r <repo>]")
     parser.add_argument("-r", "--repo", dest="repo", metavar="<repo>", help="use a repo instead of foreign packages (e.g. aurutils)")
 
     args = parser.parse_args()

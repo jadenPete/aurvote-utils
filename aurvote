@@ -126,31 +126,32 @@ def main():
 
     args = parser.parse_args()
 
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1 and not sys.argv[1] in ("-h", "--help"):
         session = requests.Session()
 
-        if load_cookie(session, COOKIE_PATH) or login(session, input("Username: "), getpass.getpass()):
+        if not load_cookie(session, COOKIE_PATH):
+            if not login(session, input("Username: "), getpass.getpass()):
+                parser.error("unable to login")
+
             dump_cookie(session, COOKIE_PATH)
 
-            if args.list:
-                for pkg in sorted(get_voted(session)):
-                    print(pkg.name)
+        if args.list:
+            for pkg in sorted(get_voted(session)):
+                print(pkg.name)
 
-            elif args.vote_pkgs != None:
-                token = get_token(session)
+        elif args.vote_pkgs != None:
+            token = get_token(session)
 
-                for pkg in args.vote_pkgs:
-                    if not vote(session, token, pkg):
-                        print("unable to vote %s" % pkg)
+            for pkg in args.vote_pkgs:
+                if not vote(session, token, pkg):
+                    print("unable to vote %s" % pkg)
 
-            elif args.unvote_pkgs != None:
-                token = get_token(session)
+        elif args.unvote_pkgs != None:
+            token = get_token(session)
 
-                for pkg in args.unvote_pkgs:
-                    if not unvote(session, token, pkg):
-                        print("unable to unvote %s" % pkg)
-        else:
-            parser.error("unable to login")
+            for pkg in args.unvote_pkgs:
+                if not unvote(session, token, pkg):
+                    print("unable to unvote %s" % pkg)
     else:
         parser.print_help()
 
