@@ -126,7 +126,7 @@ def main():
 
     args = parser.parse_args()
 
-    if len(sys.argv) > 1 and not sys.argv[1] in ("-h", "--help"):
+    if len(sys.argv) > 1:
         session = requests.Session()
 
         if not load_cookie(session, COOKIE_PATH):
