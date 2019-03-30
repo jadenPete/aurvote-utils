@@ -38,6 +38,8 @@ def main():
 
             for pkg in unvote:
                 print(f"    {pkg}")
+    else:
+        print("Nothing to do")
 
 if __name__ == "__main__":
     main()
