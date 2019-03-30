@@ -4,6 +4,8 @@ import argparse
 import bs4
 import collections
 import getpass
+import os
+import pickle
 import requests
 import sys
 
@@ -14,20 +16,59 @@ SEARCH_URL_TEMPLATE = "https://aur.archlinux.org/packages/?O=%d&SO=d&PP=250&do_S
 VOTE_URL_TEMPLATE = "https://aur.archlinux.org/pkgbase/%s/vote/"
 UNVOTE_URL_TEMPLATE = "https://aur.archlinux.org/pkgbase/%s/unvote/"
 
+DATA_PATH = os.path.expanduser("~/.local/share/aurvote-utils")
+COOKIE_PATH = f"{DATA_PATH}/cookie"
+
 Package = collections.namedtuple("Package", ("name", "version", "votes", "popularity", "voted", "notify", "description", "maintainer"))
 
 class CustomHelpFormatter(argparse.HelpFormatter):
-   def _format_args(self, action, default_metavar):
+    """ Used to customize multiparameter metavars """
+
+    def _format_args(self, action, default_metavar):
         return "<%s>..." % self._metavar_formatter(action, default_metavar)(1)
 
 def decode(response):
+    """ Parse an HTML response string """
+
     return bs4.BeautifulSoup(response.text, "html.parser")
 
+def load_cookie(session, path):
+    """ Load a cookie jar
+
+    Returns:
+        True if the cookie exists and is accepted, False otherwise
+    """
+
+    if not os.path.isfile(path):
+        return False
+
+    with open(path, "rb") as file:
+        session.cookies.update(pickle.load(file))
+
+    return is_logged_in(decode(session.get(PACKAGES_URL)))
+
+def dump_cookie(session, path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+    with open(path, "wb") as file:
+        pickle.dump(session.cookies, file)
+
 def login(session, username, password):
+    """ Login to the AUR
+
+    Returns:
+        True if the login was successful, False otherwise
+    """
+
     soup = decode(session.post(LOGIN_URL, {
-        "user": username, "passwd": password
+        "user": username,
+        "passwd": password,
+        "remember_me": "on",
     }))
 
+    return is_logged_in(soup)
+
+def is_logged_in(soup):
     return soup.select_one("a[href=\"/logout/\"]") != None
 
 def get_token(session):
@@ -35,12 +76,23 @@ def get_token(session):
     return soup.select_one("input[name=token]")["value"]
 
 def get_voted(session):
+    """ Get the voted packages
+
+    Returns:
+        A tuple of Package objects
+    """
+
     offset = 0
 
     while True:
-        soup = decode(session.get(SEARCH_URL_TEMPLATE % offset))
+        # Load the search page and parse the rows in the results table
+        rows = decode(session.get(SEARCH_URL_TEMPLATE % offset)).select("tbody > tr")
 
-        for row in soup.select("tbody > tr"):
+        # In case we reach the last page
+        if not rows:
+            return
+
+        for row in rows:
             pkg = Package(*(column.get_text(strip=True) for column in row.select("td")[1:]))
 
             if not pkg.voted:
@@ -65,19 +117,21 @@ def unvote(session, token, pkg):
     return response.status_code == requests.codes.found
 
 def main():
-    parser = argparse.ArgumentParser(usage="%(prog)s [(-l | (-v | -u) <pkg>...) <username>]", formatter_class=CustomHelpFormatter)
+    parser = argparse.ArgumentParser(usage="%(prog)s [-h | -l | (-v | -u) <pkg>...]", formatter_class=CustomHelpFormatter)
 
+    parser.add_argument("-a", "--login", action="store_true", dest="login", help="login to the AUR")
     parser.add_argument("-l", "--list", action="store_true", dest="list", help="list the voted packages (default)")
     parser.add_argument("-v", "--vote", nargs="+", type=str, dest="vote_pkgs", metavar="pkg", help="vote for package(s)")
     parser.add_argument("-u", "--unvote", nargs="+", type=str, dest="unvote_pkgs", metavar="pkg", help="unvote package(s)")
-    parser.add_argument("username", type=str, help="the username to login with")
 
     args = parser.parse_args()
 
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 1:
         session = requests.Session()
 
-        if login(session, args.username, getpass.getpass()):
+        if load_cookie(session, COOKIE_PATH) or login(session, input("Username: "), getpass.getpass()):
+            dump_cookie(session, COOKIE_PATH)
+
             if args.list:
                 for pkg in sorted(get_voted(session)):
                     print(pkg.name)

@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+
+import argparse
+import subprocess
+
+def get_pkgs(args):
+    return set([line.decode().strip() for line in subprocess.Popen(args, stdout=subprocess.PIPE).stdout])
+
+def main():
+    parser = argparse.ArgumentParser(usage="%progs [-h | -r <repo>]")
+    parser.add_argument("-r", "--repo", dest="repo", metavar="<repo>", help="use a repo instead of foreign packages (e.g. aurutils)")
+
+    args = parser.parse_args()
+
+    installed = get_pkgs(("pacman",) + (("-Slq", args.repo) if args.repo else ("-Qqm",)))
+    voted = get_pkgs(("./aurvote", "-l"))
+
+    # The packages to vote and unvote
+    vote = sorted(installed.difference(voted))
+    unvote = sorted(voted.difference(installed))
+
+    if vote or unvote:
+        subprocess.call(("./aurvote", "-a"))
+
+        if vote:
+            subprocess.call(("./aurvote", "-v") + tuple(vote))
+            print("Voted for:")
+
+            for pkg in vote:
+                print(f"    {pkg}")
+
+            if unvote:
+                print()
+
+        if unvote:
+            subprocess.call(("./aurvote", "-u") + tuple(unvote))
+            print("Unvoted:")
+
+            for pkg in unvote:
+                print(f"    {pkg}")
+
+if __name__ == "__main__":
+    main()
