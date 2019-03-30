@@ -13,17 +13,17 @@ def main():
     args = parser.parse_args()
 
     installed = get_pkgs(("pacman",) + (("-Slq", args.repo) if args.repo else ("-Qqm",)))
-    voted = get_pkgs(("./aurvote", "-l"))
+    voted = get_pkgs(("aurvote", "-l"))
 
     # The packages to vote and unvote
     vote = sorted(installed.difference(voted))
     unvote = sorted(voted.difference(installed))
 
     if vote or unvote:
-        subprocess.call(("./aurvote", "-a"))
+        subprocess.call(("aurvote", "-a"))
 
         if vote:
-            subprocess.call(("./aurvote", "-v") + tuple(vote))
+            subprocess.call(("aurvote", "-v") + tuple(vote))
             print("Voted for:")
 
             for pkg in vote:
@@ -33,7 +33,7 @@ def main():
                 print()
 
         if unvote:
-            subprocess.call(("./aurvote", "-u") + tuple(unvote))
+            subprocess.call(("aurvote", "-u") + tuple(unvote))
             print("Unvoted:")
 
             for pkg in unvote:
