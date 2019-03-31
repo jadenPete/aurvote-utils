@@ -17,7 +17,7 @@ PACKAGE_URL_TEMPLATE = "https://aur.archlinux.org/packages/%s/"
 VOTE_URL_TEMPLATE = "https://aur.archlinux.org/pkgbase/%s/vote/"
 UNVOTE_URL_TEMPLATE = "https://aur.archlinux.org/pkgbase/%s/unvote/"
 
-DATA_PATH = os.path.expanduser("~/.local/share/aurvote-utils")
+DATA_PATH = os.getenv("XDG_DATA_HOME", os.path.expanduser("~/.local/share")) + "/aurvote-utils"
 COOKIE_PATH = f"{DATA_PATH}/cookie"
 
 Package = collections.namedtuple("Package", ("name", "version", "votes", "popularity", "voted", "notify", "description", "maintainer"))
