@@ -13,6 +13,7 @@ LOGIN_URL = "https://aur.archlinux.org/login/"
 PACKAGES_URL = "https://aur.archlinux.org/packages/"
 
 SEARCH_URL_TEMPLATE = "https://aur.archlinux.org/packages/?O=%d&SO=d&PP=250&do_Search=Go&SB=w"
+PACKAGE_URL_TEMPLATE = "https://aur.archlinux.org/packages/%s/"
 VOTE_URL_TEMPLATE = "https://aur.archlinux.org/pkgbase/%s/vote/"
 UNVOTE_URL_TEMPLATE = "https://aur.archlinux.org/pkgbase/%s/unvote/"
 
@@ -93,7 +94,7 @@ def get_voted(session):
             return
 
         for row in rows:
-            pkg = Package(*(column.get_text(strip=True) for column in row.select("td")[1:]))
+            pkg = Package(*(column.get_text(strip=True) for column in row.find_all("td")[1:]))
 
             if not pkg.voted:
                 return
@@ -102,15 +103,19 @@ def get_voted(session):
 
         offset += 250
 
+def get_base(session, pkg):
+    soup = decode(session.get(PACKAGE_URL_TEMPLATE % pkg))
+    return soup.select_one("#pkginfo > tr:nth-of-type(2) a").get_text()
+
 def vote(session, token, pkg):
-    response = session.post(VOTE_URL_TEMPLATE % pkg, {
+    response = session.post(VOTE_URL_TEMPLATE % get_base(session, pkg), {
         "token": token, "do_Vote": pkg
     }, allow_redirects=False)
 
     return response.status_code == requests.codes.found
 
 def unvote(session, token, pkg):
-    response = session.post(UNVOTE_URL_TEMPLATE % pkg, {
+    response = session.post(UNVOTE_URL_TEMPLATE % get_base(session, pkg), {
         "token": token, "do_UnVote": pkg
     }, allow_redirects=False)
 
