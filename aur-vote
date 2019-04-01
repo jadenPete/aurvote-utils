@@ -123,15 +123,13 @@ def unvote(session, token, pkg):
 
 def main():
     parser = argparse.ArgumentParser(usage="%(prog)s [-h | -a | -l | (-v | -u) <pkg>...]", formatter_class=CustomHelpFormatter)
-
     parser.add_argument("-a", "--login", action="store_true", help="login to the AUR")
     parser.add_argument("-l", "--list", action="store_true", help="list the voted packages (default)")
     parser.add_argument("-v", "--vote", nargs="+", metavar="pkg", help="vote for package(s)")
     parser.add_argument("-u", "--unvote", nargs="+", metavar="pkg", help="unvote package(s)")
 
-    args = parser.parse_args()
-
     if len(sys.argv) > 1:
+        args = parser.parse_args()
         session = requests.Session()
 
         if not load_cookie(session, COOKIE_PATH):
