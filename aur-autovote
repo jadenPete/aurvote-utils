@@ -8,8 +8,8 @@ def get_pkgs(args):
 
 def main():
     parser = argparse.ArgumentParser(usage="%(prog)s [-h | -r <repo> | -k]")
-    parser.add_argument("-r", "--repo", dest="repo", metavar="<repo>", help="use a repo instead of foreign packages (e.g. aurutils)")
-    parser.add_argument("-k", "--keep", action="store_true", dest="keep", help="don't unvote uninstalled packages")
+    parser.add_argument("-r", "--repo", metavar="<repo>", help="use a repo instead of foreign packages (e.g. aurutils)")
+    parser.add_argument("-k", "--keep", action="store_true", help="don't unvote uninstalled packages")
 
     args = parser.parse_args()
 
