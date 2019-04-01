@@ -7,8 +7,9 @@ def get_pkgs(args):
     return set([line.decode().strip() for line in subprocess.Popen(args, stdout=subprocess.PIPE).stdout])
 
 def main():
-    parser = argparse.ArgumentParser(usage="%(prog)s [-h | -r <repo>]")
+    parser = argparse.ArgumentParser(usage="%(prog)s [-h | -r <repo> | -k]")
     parser.add_argument("-r", "--repo", dest="repo", metavar="<repo>", help="use a repo instead of foreign packages (e.g. aurutils)")
+    parser.add_argument("-k", "--keep", action="store_true", dest="keep", help="don't unvote uninstalled packages")
 
     args = parser.parse_args()
 
@@ -17,7 +18,7 @@ def main():
 
     # The packages to vote and unvote
     vote = sorted(installed.difference(voted))
-    unvote = sorted(voted.difference(installed))
+    unvote = [] if args.keep else sorted(voted.difference(installed))
 
     if vote or unvote:
         subprocess.call(("aur-vote", "-a"))

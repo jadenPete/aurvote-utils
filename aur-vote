@@ -122,7 +122,7 @@ def unvote(session, token, pkg):
     return response.status_code == requests.codes.found
 
 def main():
-    parser = argparse.ArgumentParser(usage="%(prog)s [-h | -l | (-v | -u) <pkg>...]", formatter_class=CustomHelpFormatter)
+    parser = argparse.ArgumentParser(usage="%(prog)s [-h | -a | -l | (-v | -u) <pkg>...]", formatter_class=CustomHelpFormatter)
 
     parser.add_argument("-a", "--login", action="store_true", dest="login", help="login to the AUR")
     parser.add_argument("-l", "--list", action="store_true", dest="list", help="list the voted packages (default)")
